@@ -1,1 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENDOCRINE: MULTIPLAYER</title>
+    <!-- โหลด PeerJS สำหรับทำระบบออนไลน์ Peer-to-Peer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap');
+
+        :root {
+            --bg-color: #050b14;
+            --neon-blue: #00e5ff;
+            --neon-red: #ff1744;
+            --neon-green: #00e676;
+            --neon-yellow: #ffea00;
+            --glass-bg: rgba(10, 25, 45, 0.7);
+            --glass-border: rgba(0, 229, 255, 0.3);
+            font-family: 'Rajdhani', 'Sarabun', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background-color: var(--bg-color); color: #fff; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; text-shadow: 0 0 10px currentColor; }
+        
+        .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0a192f 0%, var(--bg-color) 100%); }
+        .screen.active { display: flex; }
+
+        .btn { padding: 15px 30px; margin: 10px; background: transparent; color: var(--neon-blue); border: 2px solid var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 1.2rem; cursor: pointer; transition: all 0.3s; text-transform: uppercase; border-radius: 5px; box-shadow: 0 0 10px rgba(0,229,255,0.2) inset; }
+        .btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); transform: scale(1.05); }
+        .btn:disabled { border-color: #555; color: #555; cursor: not-allowed; box-shadow: none; transform: none; }
+        
+        .btn-small { padding: 5px 15px; font-size: 1rem; margin: 0 10px; }
+        .btn-red { color: var(--neon-red); border-color: var(--neon-red); box-shadow: 0 0 10px rgba(255,23,68,0.2) inset; }
+        .btn-red:hover { background: var(--neon-red); color: #000; box-shadow: 0 0 20px var(--neon-red); }
+
+        input[type="text"] { background: rgba(0,0,0,0.5); border: 2px solid var(--neon-blue); color: var(--neon-yellow); font-family: 'Orbitron', sans-serif; text-transform: uppercase; outline: none; }
+
+        /* HUD & Game Layout */
+        #game-screen { display: none; flex-direction: row; width: 100%; height: 100%; }
+        #game-screen.active { display: flex; }
+        
+        .sidebar { width: 320px; background: var(--glass-bg); border-right: 1px solid var(--glass-border); padding: 20px; display: flex; flex-direction: column; backdrop-filter: blur(10px); z-index: 10; overflow-y: auto;}
+        .main-area { flex: 1; position: relative; display: flex; flex-direction: column; }
+        
+        /* Stats */
+        .player-stat-card { border: 1px solid var(--neon-blue); padding: 10px; margin-bottom: 15px; background: rgba(0,229,255,0.05); border-radius: 5px; position: relative;}
+        .player-stat-card.my-turn { border-color: var(--neon-yellow); box-shadow: 0 0 15px var(--neon-yellow); background: rgba(255, 234, 0, 0.1); }
+        .player-stat-card.is-me::after { content: '(YOU)'; position: absolute; top: 10px; right: 10px; font-size: 0.8rem; color: var(--neon-green); font-weight: bold;}
+        .stat-label { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 5px; font-size: 0.9rem;}
+        .progress-bar { width: 100%; height: 8px; background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; position: relative; }
+        .progress-fill { height: 100%; transition: width 0.3s; }
+        
+        /* Board */
+        .board-container { flex: 1; padding: 20px; position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 10px; overflow-y: auto;}
+        .node { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; text-align: center; position: relative; background: rgba(0,229,255,0.1); flex-shrink: 0;}
+        .node.boss-node { border-color: var(--neon-red); background: rgba(255,23,68,0.2); }
+        
+        .player-token { width: 22px; height: 22px; border-radius: 50%; position: absolute; top: -5px; left: -5px; z-index: 5; border: 2px solid #000; display: flex; justify-content: center; align-items: center; color: black; font-weight: bold; font-size: 0.7rem; transition: all 0.5s;}
+        
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; text-align: center; }
+        .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .choice-btn { background: rgba(0,229,255,0.1); border: 1px solid var(--neon-blue); color: #fff; padding: 15px; cursor: pointer; transition: 0.2s; font-family: 'Sarabun', sans-serif;}
+        .choice-btn:hover:not(:disabled) { background: var(--neon-blue); color: #000; }
+        .choice-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .controls-area { display: flex; justify-content: space-around; padding: 20px; background: rgba(0,0,0,0.8); border-top: 1px solid var(--neon-blue); align-items: center;}
+        
+        .node-number { position: absolute; bottom: 2px; font-size: 0.5rem; opacity: 0.6; }
+
+        .settings-panel { margin: 15px; padding: 15px; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--neon-green); border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Menu -->
+    <div id="main-menu" class="screen active">
+        <h1 style="font-size: 3.5rem; color: var(--neon-blue); text-align: center;">ENDOCRINE<br><span style="color: #fff;">MULTIPLAYER</span></h1>
+        <p style="margin: 10px 0; font-size: 1.2rem; letter-spacing: 2px;">"Control the Hormones. Restore the Balance."</p>
+        <button class="btn" onclick="showScreen('lobby-host')">HOST GAME (สร้างห้อง)</button>
+        <button class="btn" onclick="showScreen('lobby-join')">JOIN GAME (เข้าห้อง)</button>
+    </div>
+
+    <!-- Host Lobby -->
+    <div id="lobby-host" class="screen">
+        <h2 style="color: var(--neon-yellow);">HOSTING ROOM</h2>
+        <div style="margin: 20px; padding: 30px; background: rgba(0,229,255,0.1); border: 1px solid var(--neon-blue); text-align: center; width: 400px;">
+            <p>ROOM CODE:</p>
+            <h1 id="host-room-code" style="font-size: 4rem; letter-spacing: 10px; color: var(--neon-green);">----</h1>
+            <p style="margin-top: 10px;" id="host-status">INITIALIZING SERVER...</p>
+            
+            <!-- ตั้งค่าจำนวนช่อง (เฉพาะ Host) -->
+            <div class="settings-panel">
+                <p style="margin-bottom: 10px; font-weight: bold; color: var(--neon-green);">BOARD SIZE (จำนวนช่อง)</p>
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <button class="btn btn-small" onclick="adjustBoardSize(-10)">-10</button>
+                    <span id="display-board-size" style="font-size: 2rem; width: 80px; font-family: 'Orbitron', sans-serif;">100</span>
+                    <button class="btn btn-small" onclick="adjustBoardSize(10)">+10</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="host-players-list" style="margin-bottom: 20px; font-family: 'Orbitron', sans-serif; color: var(--neon-blue);">PLAYERS CONNECTED: 0/18</div>
+        <button class="btn btn-red" id="btn-start-game" onclick="hostStartGame()" disabled>START MISSION</button>
+        <button class="btn" onclick="location.reload()">CANCEL</button>
+    </div>
+
+    <!-- Join Lobby -->
+    <div id="lobby-join" class="screen">
+        <h2>JOIN ROOM</h2>
+        <div style="margin: 20px; padding: 30px; background: rgba(0,229,255,0.1); border: 1px solid var(--neon-blue); text-align: center;">
+            <p>ENTER 4-DIGIT CODE:</p>
+            <input type="text" id="input-room-code" maxlength="4" style="margin: 15px 0; padding: 15px; font-size: 2rem; text-align: center; width: 200px; letter-spacing: 5px;">
+            <br>
+            <p id="join-status" style="color: var(--neon-yellow); font-weight:bold;"></p>
+        </div>
+        <button class="btn" id="btn-join" onclick="clientJoinRoom()">CONNECT</button>
+        <button class="btn" onclick="location.reload()">BACK</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen">
+        <div class="sidebar" id="players-hud">
+            <!-- สร้างผ่าน JS -->
+        </div>
+
+        <div class="main-area">
+            <div class="board-container" id="board">
+                <!-- Nodes generated by JS -->
+            </div>
+            
+            <div class="controls-area">
+                <div id="turn-indicator" style="flex: 1; font-size: 1.5rem; color: var(--neon-blue); font-weight: bold;">
+                    WAITING...
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <h3 id="dice-result" style="font-size: 2rem; color: var(--neon-yellow);">-</h3>
+                </div>
+                <div style="flex: 1; text-align: right;">
+                    <button class="btn" id="btn-roll" onclick="actionRollDice()" disabled>ROLL DICE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crisis Modal -->
+    <div id="crisis-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 id="crisis-title" style="color: var(--neon-yellow);">⚠️ HORMONE CRISIS</h2>
+            <p id="crisis-player" style="color: var(--neon-blue); font-weight: bold; margin: 10px 0;"></p>
+            <p id="crisis-desc" style="margin: 20px 0; font-size: 1.2rem; font-family: 'Sarabun', sans-serif;"></p>
+            <div class="choices" id="crisis-choices"></div>
+        </div>
+    </div>
+
+    <div id="result-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 id="result-title"></h2>
+            <p id="result-desc" style="margin: 20px 0; font-size: 1.1rem; font-family: 'Sarabun', sans-serif;"></p>
+            <p id="result-effect" style="color: var(--neon-yellow); font-weight: bold; margin-bottom: 20px;"></p>
+            <button class="btn" id="btn-result-close" onclick="closeResultModal()">CONTINUE</button>
+        </div>
+    </div>
+
+<script>
+    // 18 สีสำหรับผู้เล่น 18 คน
+    const PLAYER_COLORS = [
+        การทำเมนูที่สามารถกดเพิ่มหรือลดจำนวนข้อได้ **เฉพาะหัวหน้าห้อง (Room Host/Creator)** เป็นฟีเจอร์ที่ดีมากในการจัดการสิทธิ์ครับ 
+
+หลักการสำคัญคือการ **"ตรวจสอบสิทธิ์" (Authorization)** ว่าคนที่กำลังเปิดหน้านี้อยู่คือคนที่สร้างห้องหรือไม่ โดยแบ่งการทำงานออกเป็น 3 ส่วนหลักๆ ดังนี้ครับ
+
+### 1. การตรวจสอบสิทธิ์ (Check Role)
+คุณต้องมีข้อมูลที่ระบุว่าผู้ใช้คนไหนเป็นหัวห้อง (เช่น เก็บ `hostId` ไว้ในข้อมูลห้อง) และนำมาเทียบกับไอดีของผู้ใช้ที่กำลังล็อกอินอยู่
+
+### 2. การแสดงผลหน้าจอ (Conditional Rendering)
+แสดงเมนูเพิ่ม/ลดจำนวนข้อเฉพาะเมื่อผู้ใช้คนนั้นเป็นหัวห้องเท่านั้น 
+
+**ตัวอย่างถ้าเขียนด้วย React / Next.js:**
+```jsx
+function RoomSetting({ currentUser, roomData }) {
+  // เช็กว่าไอดีผู้ใช้ ตรงกับไอดีหัวห้องหรือไม่
+  const isHost = currentUser.id === roomData.hostId;
+
+  return (
+    <div>
+      <h2>ห้อง: {roomData.roomName}</h2>
+      
+      {/* ถ้าเป็น isHost ถึงจะแสดงเมนูนี้ */}
+      {isHost && (
+        <div className="admin-menu">
+          <h3>ตั้งค่าจำนวนข้อ</h3>
+          <button onClick={() => updateQuestionCount(-1)}>-</button>
+          <span> {roomData.questionCount} </span>
+          <button onClick={() => updateQuestionCount(1)}>+</button>
+        </div>
+      )}
+      
+      {/* ส่วนที่ผู้เล่นทุกคนมองเห็น */}
+      <div className="player-view">
+        <p>จำนวนข้อทั้งหมด: {roomData.questionCount} ข้อ</p>
+      </div>
+    </div>
+  );
+}
 
