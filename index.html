@@ -15,27 +15,67 @@
             --neon-red: #ff1744;
             --neon-green: #00e676;
             --neon-yellow: #ffea00;
+            --glass-bg: rgba(10, 25, 45, 0.7);
+            --glass-border: rgba(0, 229, 255, 0.3);
+            font-family: 'Rajdhani', 'Sarabun', sans-serif;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-color); color: #fff; overflow: hidden; width: 100vw; height: 100vh; font-family: 'Rajdhani', 'Sarabun', sans-serif; user-select: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background-color: var(--bg-color); color: #fff; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; text-shadow: 0 0 10px currentColor; }
         
-        .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; }
+        .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0a192f 0%, var(--bg-color) 100%); }
         .screen.active { display: flex; }
 
-        .btn { padding: 15px 30px; margin: 10px; background: rgba(0,0,0,0.5); color: var(--neon-blue); border: 2px solid var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 1.2rem; cursor: pointer; border-radius: 5px; }
-        .btn:hover { background: var(--neon-blue); color: #000; }
-        .btn-small { padding: 5px 15px; font-size: 1.5rem; margin: 0 10px; width: 50px; height: 50px; }
+        .btn { padding: 15px 30px; margin: 10px; background: rgba(0,0,0,0.5); color: var(--neon-blue); border: 2px solid var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 1.2rem; cursor: pointer; transition: all 0.3s; text-transform: uppercase; border-radius: 5px; box-shadow: 0 0 10px rgba(0,229,255,0.2) inset; }
+        .btn:hover:not(:disabled) { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); transform: scale(1.05); }
+        .btn:disabled { border-color: #555; color: #555; cursor: not-allowed; box-shadow: none; transform: none; background: #222; }
+        
+        .btn-small { padding: 5px 15px; font-size: 1.5rem; margin: 0 10px; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;}
+        .btn-red { color: var(--neon-red); border-color: var(--neon-red); box-shadow: 0 0 10px rgba(255,23,68,0.2) inset; }
+        .btn-red:hover:not(:disabled) { background: var(--neon-red); color: #000; box-shadow: 0 0 20px var(--neon-red); }
 
-        /* ส่วนอื่นๆ ซ่อนไว้เพื่อความกระชับในโค้ด UI */
-        .settings-panel { margin-top: 20px; padding: 15px; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--neon-green); border-radius: 5px; text-align: center;}
+        input[type="text"] { background: rgba(0,0,0,0.8); border: 2px solid var(--neon-blue); color: var(--neon-yellow); font-family: 'Orbitron', sans-serif; text-transform: uppercase; outline: none; text-align: center; }
+
+        /* Game Layout */
+        #game-screen { display: none; flex-direction: row; width: 100%; height: 100%; }
+        #game-screen.active { display: flex; }
+        
+        .sidebar { width: 320px; background: var(--glass-bg); border-right: 1px solid var(--glass-border); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10;}
+        .main-area { flex: 1; position: relative; display: flex; flex-direction: column; }
+        
+        /* Stats */
+        .player-stat-card { border: 1px solid var(--neon-blue); padding: 10px; margin-bottom: 15px; background: rgba(0,229,255,0.05); border-radius: 5px; position: relative;}
+        .player-stat-card.my-turn { border-color: var(--neon-yellow); box-shadow: 0 0 15px var(--neon-yellow); background: rgba(255, 234, 0, 0.1); }
+        .player-stat-card.is-me::after { content: '(YOU)'; position: absolute; top: 10px; right: 10px; font-size: 0.8rem; color: var(--neon-green); font-weight: bold;}
+        .stat-label { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 5px; font-size: 0.9rem;}
+        .progress-bar { width: 100%; height: 8px; background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s; }
+        
+        /* Board */
+        .board-container { flex: 1; padding: 20px; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 10px; overflow-y: auto;}
+        .node { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; text-align: center; position: relative; background: rgba(0,229,255,0.1); flex-shrink: 0;}
+        .node.boss-node { border-color: var(--neon-red); background: rgba(255,23,68,0.2); }
+        .player-token { width: 22px; height: 22px; border-radius: 50%; position: absolute; top: -5px; left: -5px; z-index: 5; border: 2px solid #000; display: flex; justify-content: center; align-items: center; color: black; font-weight: bold; font-size: 0.7rem; transition: all 0.5s;}
+        
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; text-align: center; }
+        .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .choice-btn { background: rgba(0,229,255,0.1); border: 1px solid var(--neon-blue); color: #fff; padding: 15px; cursor: pointer; transition: 0.2s;}
+        .choice-btn:hover:not(:disabled) { background: var(--neon-blue); color: #000; }
+        .choice-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .controls-area { display: flex; justify-content: space-around; padding: 20px; background: rgba(0,0,0,0.8); border-top: 1px solid var(--neon-blue); align-items: center;}
+        .node-number { position: absolute; bottom: 2px; font-size: 0.5rem; opacity: 0.6; }
+        .settings-panel { margin-top: 20px; padding: 15px; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--neon-green); border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <!-- Main Menu -->
     <div id="main-menu" class="screen active">
-        <h1 style="font-size: 3.5rem; color: var(--neon-blue); text-align: center; font-family: 'Orbitron', sans-serif;">ENDOCRINE</h1>
+        <h1 style="font-size: 3.5rem; color: var(--neon-blue); text-align: center;">ENDOCRINE<br><span style="color: #fff;">MULTIPLAYER</span></h1>
         <button class="btn" onclick="gotoHost()">HOST GAME (สร้างห้อง)</button>
         <button class="btn" onclick="gotoJoin()">JOIN GAME (เข้าห้อง)</button>
     </div>
@@ -43,21 +83,24 @@
     <!-- Host Lobby -->
     <div id="lobby-host" class="screen">
         <h2 style="color: var(--neon-yellow);">HOSTING ROOM</h2>
-        <div style="margin: 20px; padding: 30px; border: 1px solid var(--neon-blue); text-align: center;">
+        <div style="margin: 20px; padding: 30px; border: 1px solid var(--neon-blue); text-align: center; width: 450px;">
             <p>ROOM CODE:</p>
-            <h1 id="host-room-code" style="font-size: 4rem; color: var(--neon-green);">----</h1>
-            <p id="host-status">INITIALIZING SERVER...</p>
+            <h1 id="host-room-code" style="font-size: 4rem; color: var(--neon-green); letter-spacing: 10px;">----</h1>
+            <p id="host-status" style="margin-top: 10px;">INITIALIZING...</p>
             
             <div class="settings-panel">
-                <p>BOARD SIZE (จำนวนช่อง)</p>
-                <div style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
+                <p style="margin-bottom: 10px; font-weight: bold; color: var(--neon-green);">BOARD SIZE (จำนวนช่อง)</p>
+                <div style="display: flex; justify-content: center; align-items: center;">
                     <button class="btn btn-small" onclick="adjustBoardSize(-10)">-</button>
-                    <span id="display-board-size" style="font-size: 2.5rem; width: 100px; color: var(--neon-yellow);">100</span>
+                    <span id="display-board-size" style="font-size: 2.5rem; width: 100px; font-family: 'Orbitron'; color: var(--neon-yellow);">100</span>
                     <button class="btn btn-small" onclick="adjustBoardSize(10)">+</button>
                 </div>
             </div>
         </div>
-        <button class="btn" onclick="location.reload()">BACK TO MENU</button>
+        
+        <div id="host-players-list" style="margin-bottom: 20px; color: var(--neon-blue);">PLAYERS CONNECTED: 0/18</div>
+        <button class="btn btn-red" id="btn-start-game" onclick="hostStartGame()" disabled>START MISSION</button>
+        <button class="btn" onclick="location.reload()">CANCEL</button>
     </div>
 
     <!-- Join Lobby -->
@@ -65,34 +108,87 @@
         <h2>JOIN ROOM</h2>
         <div style="margin: 20px; padding: 30px; border: 1px solid var(--neon-blue); text-align: center;">
             <p>ENTER 4-DIGIT CODE:</p>
-            <input type="text" id="input-room-code" maxlength="4" style="margin: 15px 0; padding: 15px; font-size: 2rem; text-align: center; width: 200px;">
+            <input type="text" id="input-room-code" maxlength="4" style="margin: 15px 0; padding: 15px; font-size: 2rem; width: 200px; letter-spacing: 5px;">
+            <br>
+            <p id="join-status" style="color: var(--neon-yellow); font-weight:bold;"></p>
         </div>
-        <button class="btn" onclick="location.reload()">BACK TO MENU</button>
+        <button class="btn" onclick="clientJoinRoom()">CONNECT</button>
+        <button class="btn" onclick="location.reload()">BACK</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen">
+        <div class="sidebar" id="players-hud"></div>
+        <div class="main-area">
+            <div class="board-container" id="board"></div>
+            <div class="controls-area">
+                <div id="turn-indicator" style="flex: 1; font-size: 1.5rem; color: var(--neon-blue); font-weight: bold;">WAITING...</div>
+                <div style="text-align: center; flex: 1;"><h3 id="dice-result" style="font-size: 2rem; color: var(--neon-yellow);">-</h3></div>
+                <div style="flex: 1; text-align: right;"><button class="btn" id="btn-roll" onclick="actionRollDice()" disabled>ROLL DICE</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="crisis-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 id="crisis-title" style="color: var(--neon-yellow);">⚠️ HORMONE CRISIS</h2>
+            <p id="crisis-player" style="color: var(--neon-blue); font-weight: bold; margin: 10px 0;"></p>
+            <p id="crisis-desc" style="margin: 20px 0; font-size: 1.2rem;"></p>
+            <div class="choices" id="crisis-choices"></div>
+        </div>
+    </div>
+
+    <div id="result-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 id="result-title"></h2>
+            <p id="result-desc" style="margin: 20px 0; font-size: 1.1rem;"></p>
+            <p id="result-effect" style="color: var(--neon-yellow); font-weight: bold; margin-bottom: 20px;"></p>
+            <button class="btn" id="btn-result-close" onclick="closeResultModal()">CONTINUE</button>
+        </div>
     </div>
 
 <script>
-    let hostBoardSpaces = 100;
+    let hostBoardSpaces = 100; 
+    let NODE_TYPES = [];
+    const GLAND_NAMES = ["PANCREAS", "THYROID", "ADRENAL", "PITUITARY", "PINEAL"];
+    const PLAYER_COLORS = ["#ffea00", "#00e5ff", "#00e676", "#ff1744", "#ff9100", "#d500f9", "#76ff03", "#f50057", "#00b0ff", "#1de9b6", "#c6ff00", "#ff3d00", "#651fff", "#ffffff"];
+    
+    const QUESTIONS = [
+        { q: "ระดับน้ำตาลในเลือดสูงมากหลังมื้ออาหาร ฮอร์โมนใดควรหลั่ง?", c: ["อินซูลิน", "กลูคากอน", "ADH", "ไทรอกซิน"], a: 0 },
+        { q: "คุณอดอาหาร 12 ชั่วโมง น้ำตาลตก ตับอ่อนจะหลั่งฮอร์โมนใด?", c: ["อินซูลิน", "กลูคากอน", "คอร์ติซอล", "อะดรีนาลิน"], a: 1 }
+    ]; 
 
-    // ฟังก์ชันเปลี่ยนหน้าจอ (แยกออกจากการเชื่อมต่อเน็ต เพื่อให้กดติดเสมอ)
+    let peer = null;
+    let connections = []; 
+    let hostConnection = null; 
+    let isHost = false;
+    let myPlayerId = -1; 
+    let roomPrefix = "endo-"; 
+
+    let gameState = {
+        status: 'LOBBY', 
+        players: [],
+        currentTurn: 0,
+        diceValue: '-',
+        activeEvent: null,
+        totalSpaces: 100 
+    };
+
     function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.screen, #game-screen').forEach(el => el.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    // เมื่อกดปุ่ม Host
     function gotoHost() {
         showScreen('lobby-host');
-        // สุ่มรหัสห้องให้เลยทันทีที่เข้าหน้า Host
-        document.getElementById('host-room-code').innerText = Math.random().toString(36).substring(2, 6).toUpperCase();
-        document.getElementById('host-status').innerText = "ONLINE! WAITING FOR PLAYERS...";
+        setTimeout(initHost, 100); // ดีเลย์นิดนึงให้ UI เปลี่ยนก่อนเชื่อมต่อ
     }
 
-    // เมื่อกดปุ่ม Join
     function gotoJoin() {
         showScreen('lobby-join');
     }
 
-    // ฟังก์ชันเพิ่มลดจำนวนข้อ
     function adjustBoardSize(amount) {
         let newSize = hostBoardSpaces + amount;
         if (newSize >= 10 && newSize <= 500) { 
@@ -100,6 +196,216 @@
             document.getElementById('display-board-size').innerText = hostBoardSpaces;
         }
     }
+
+    function initHost() {
+        isHost = true;
+        myPlayerId = 0;
+        let shortCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+        document.getElementById('host-room-code').innerText = shortCode;
+        
+        peer = new Peer(roomPrefix + shortCode);
+        peer.on('open', () => {
+            document.getElementById('host-status').innerText = "ONLINE! WAITING FOR PLAYERS...";
+            gameState.players = [{ id: 0, name: "HOST (P1)", hp: 100, balance: 55, score: 0, pos: 0, color: PLAYER_COLORS[0] }];
+            updateLobbyUI();
+        });
+
+        peer.on('connection', (conn) => {
+            connections.push(conn);
+            let newId = gameState.players.length;
+            gameState.players.push({ id: newId, name: "PLAYER " + (newId+1), hp: 100, balance: 55, score: 0, pos: 0, color: PLAYER_COLORS[newId % PLAYER_COLORS.length] });
+            conn.on('data', (data) => processClientAction(newId, data));
+            updateLobbyUI();
+            broadcastState(); 
+        });
+    }
+
+    function clientJoinRoom() {
+        let code = document.getElementById('input-room-code').value.toUpperCase();
+        if(code.length !== 4) return alert("Please enter 4-digit code");
+        
+        let joinStatus = document.getElementById('join-status');
+        joinStatus.innerText = "CONNECTING...";
+        
+        peer = new Peer();
+        peer.on('open', () => {
+            hostConnection = peer.connect(roomPrefix + code);
+            hostConnection.on('open', () => {
+                joinStatus.innerText = "CONNECTED! WAITING FOR HOST TO START...";
+            });
+            hostConnection.on('data', (data) => {
+                if (data.type === 'SYNC_STATE') {
+                    if(myPlayerId === -1) myPlayerId = data.state.players.length - 1; 
+                    renderState(data.state);
+                }
+            });
+        });
+        peer.on('error', () => { joinStatus.innerText = "ROOM NOT FOUND"; joinStatus.style.color = "red"; });
+    }
+
+    function hostStartGame() {
+        gameState.status = 'PLAYING';
+        gameState.currentTurn = 0;
+        gameState.totalSpaces = hostBoardSpaces; 
+        generateBoard(gameState.totalSpaces);
+        broadcastState();
+    }
+
+    function generateBoard(total) {
+        const container = document.getElementById('board');
+        container.innerHTML = '';
+        NODE_TYPES = ["START"];
+        for (let i = 1; i < total - 1; i++) {
+            if (i % 10 === 0) NODE_TYPES.push("BOSS");
+            else if (i % 6 === 0) NODE_TYPES.push("CRISIS");
+            else NODE_TYPES.push(GLAND_NAMES[i % GLAND_NAMES.length]);
+        }
+        NODE_TYPES.push("FINAL BOSS");
+        
+        NODE_TYPES.forEach((type, index) => {
+            let n = document.createElement('div');
+            n.className = 'node' + (type === 'BOSS' || type === 'FINAL BOSS' ? ' boss-node' : '');
+            n.id = 'node-' + index;
+            n.innerHTML = `<span>${type}</span><div class="node-number">${index}</div>`;
+            container.appendChild(n);
+        });
+    }
+
+    function processClientAction(pId, action) {
+        if(gameState.status !== 'PLAYING' && gameState.status !== 'EVENT') return;
+        
+        if (action.type === 'ROLL_DICE' && pId === gameState.currentTurn) {
+            let roll = Math.floor(Math.random() * 6) + 1;
+            gameState.diceValue = roll;
+            gameState.players[pId].pos = Math.min(gameState.players[pId].pos + roll, gameState.totalSpaces - 1);
+            
+            let node = NODE_TYPES[gameState.players[pId].pos];
+            if (node !== "START") {
+                gameState.status = 'EVENT';
+                gameState.activeEvent = { type: 'QUIZ', pId: pId, qIdx: Math.floor(Math.random() * QUESTIONS.length) };
+            } else {
+                nextTurn();
+            }
+            broadcastState();
+        } 
+        else if (action.type === 'ANSWER_QUIZ') {
+            let p = gameState.players[pId];
+            if(action.isCorrect) {
+                p.score += 20; p.balance = Math.min(100, p.balance + 10);
+                gameState.activeEvent = { type: 'RESULT', title: "CORRECT!", desc: "ตอบถูก!", effect: "+20 Score", isPositive: true };
+            } else {
+                p.hp -= 15; p.balance -= 10;
+                gameState.activeEvent = { type: 'RESULT', title: "WRONG!", desc: "ตอบผิด!", effect: "-15 HP", isPositive: false };
+            }
+            broadcastState();
+        }
+        else if (action.type === 'CLOSE_RESULT') {
+            gameState.activeEvent = null;
+            gameState.status = 'PLAYING';
+            nextTurn();
+            broadcastState();
+        }
+    }
+
+    function nextTurn() {
+        gameState.currentTurn = (gameState.currentTurn + 1) % gameState.players.length;
+        gameState.diceValue = '-';
+    }
+
+    function broadcastState() {
+        if(!isHost) return;
+        renderState(gameState); 
+        connections.forEach(conn => conn.send({ type: 'SYNC_STATE', state: gameState }));
+    }
+
+    function sendActionToHost(action) {
+        if (isHost) processClientAction(myPlayerId, action);
+        else hostConnection.send(action);
+    }
+
+    function updateLobbyUI() {
+        if(isHost) {
+            document.getElementById('host-players-list').innerText = `PLAYERS CONNECTED: ${gameState.players.length}/18`;
+            document.getElementById('btn-start-game').disabled = gameState.players.length < 1; 
+        }
+    }
+
+    function renderState(state) {
+        gameState = state; 
+        if (gameState.status === 'LOBBY') return;
+        
+        if (!document.getElementById('game-screen').classList.contains('active')) {
+            showScreen('game-screen');
+            if(!document.getElementById('node-0')) generateBoard(gameState.totalSpaces); 
+        }
+
+        let hud = document.getElementById('players-hud');
+        hud.innerHTML = '<h2 style="margin-bottom: 20px; color: var(--neon-blue);">LEADERBOARD</h2>';
+        gameState.players.forEach(p => {
+            hud.innerHTML += `
+                <div class="player-stat-card ${gameState.currentTurn === p.id ? 'my-turn' : ''} ${myPlayerId === p.id ? 'is-me' : ''}">
+                    <h3 style="color: ${p.color};">${p.name}</h3>
+                    <div class="stat-label"><span>HP</span><span>${p.hp}</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: ${p.hp}%; background: var(--neon-red);"></div></div>
+                    <div class="stat-label" style="margin-top: 5px;"><span>SCORE</span><span style="color:var(--neon-yellow)">${p.score}</span></div>
+                </div>`;
+        });
+
+        document.getElementById('turn-indicator').innerText = `TURN: ${gameState.players[gameState.currentTurn].name}`;
+        document.getElementById('dice-result').innerText = gameState.diceValue;
+        document.getElementById('btn-roll').disabled = !(gameState.currentTurn === myPlayerId) || gameState.status !== 'PLAYING';
+
+        document.querySelectorAll('.player-token').forEach(el => el.remove());
+        gameState.players.forEach(p => {
+            let node = document.getElementById('node-' + p.pos);
+            if(node) {
+                let t = document.createElement('div');
+                t.className = 'player-token';
+                t.style.background = p.color;
+                t.innerText = p.id + 1;
+                t.style.transform = `translate(${(p.id % 4) * 8}px, ${Math.floor(p.id / 4) * 8}px)`;
+                node.appendChild(t);
+            }
+        });
+
+        document.getElementById('crisis-modal').style.display = 'none';
+        document.getElementById('result-modal').style.display = 'none';
+
+        if (gameState.status === 'EVENT' && gameState.activeEvent) {
+            let ev = gameState.activeEvent;
+            if (ev.type === 'QUIZ') {
+                let q = QUESTIONS[ev.qIdx];
+                document.getElementById('crisis-player').innerText = `Target: ${gameState.players[ev.pId].name}`;
+                document.getElementById('crisis-desc').innerText = q.q;
+                let choicesDiv = document.getElementById('crisis-choices');
+                choicesDiv.innerHTML = '';
+                q.c.forEach((cText, i) => {
+                    let b = document.createElement('button');
+                    b.className = 'choice-btn';
+                    b.innerText = cText;
+                    b.disabled = !(myPlayerId === ev.pId); 
+                    b.onclick = () => sendActionToHost({ type: 'ANSWER_QUIZ', isCorrect: (i === q.a) });
+                    choicesDiv.appendChild(b);
+                });
+                document.getElementById('crisis-modal').style.display = 'flex';
+            } 
+            else if (ev.type === 'RESULT') {
+                document.getElementById('result-title').innerText = ev.title;
+                document.getElementById('result-title').style.color = ev.isPositive ? 'var(--neon-green)' : 'var(--neon-red)';
+                document.getElementById('result-desc').innerText = ev.desc;
+                document.getElementById('result-effect').innerText = ev.effect;
+                document.getElementById('btn-result-close').style.display = (myPlayerId === gameState.currentTurn) ? 'inline-block' : 'none';
+                document.getElementById('result-modal').style.display = 'flex';
+            }
+        }
+    }
+
+    function actionRollDice() {
+        document.getElementById('btn-roll').disabled = true;
+        document.getElementById('dice-result').innerText = "🎲";
+        setTimeout(() => sendActionToHost({ type: 'ROLL_DICE' }), 500);
+    }
+    function closeResultModal() { sendActionToHost({ type: 'CLOSE_RESULT' }); }
 </script>
 </body>
 </html>
